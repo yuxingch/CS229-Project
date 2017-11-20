@@ -37,12 +37,25 @@ def store_in_array(file):
         '''
         total_time = sequence.total_time
         #print(total_time)
+        
+        # use a dictionray to store the relationship between time and qpm
+        # use a numpy array to store the keys
+        time_qpm = []
+        keys = []
+        for tempo in sequence.tempos:
+            time_qpm.append((tempo.time,tempo.qpm))
+            keys.append(tempo.time)
+        qpm_keys = np.array(keys)
+        qpm_dict = dict(time_qpm)
+
+        '''
         time_qpm = []
         for tempo in sequence.tempos:
             time_qpm.append((tempo.time,tempo.qpm))
         curr_tempo_ptr = 0
         len_time_qpm = len(time_qpm)
-        
+        '''
+
         # two channels
         channel_0 = [[] for i in range(5)]
         channel_1 = [[] for i in range(5)]
@@ -69,16 +82,22 @@ def store_in_array(file):
                 #print ('switched channel',counter)
                 channel_flag = 1
                 # move the pointer back to the beginning
-                curr_tempo_ptr = 0
+                #curr_tempo_ptr = 0
                 # clean up the tracking status
                 tracking_index = np.zeros((5,))
                 tracking_start = 0
             
+
             gap = curr_start_time - prev_end_time
             # if there is a gap, fill the gap with 0
             if gap > 0:
                 #print ('there is a gap')
-                gap_qpm = time_qpm[curr_tempo_ptr][1]
+                #gap_qpm = time_qpm[curr_tempo_ptr][1]
+                # get qpm
+                key_index = (np.abs(qpm_keys-prev_end_time)).argmin()
+                if qpm_keys[key_index] > prev_end_time:
+                    key_index = key_index - 1
+                gap_qpm = qpm_dict[qpm_keys[key_index]]
                 gap_n = int(round(gap * gap_qpm))
                 # `start_time` has been changed, which is now equal to prev_end_time
                 tracking_start = prev_end_time
@@ -107,14 +126,19 @@ def store_in_array(file):
                     tracking_index[j] = tracking_index[j]+gap_n
                 '''
                 # update the tempo pointer (it must be incremented by 1 if it is not the last one)
-                if curr_tempo_ptr + 1 < len_time_qpm:
-                    curr_tempo_ptr = curr_tempo_ptr + 1
+                #if curr_tempo_ptr + 1 < len_time_qpm:
+                #    curr_tempo_ptr = curr_tempo_ptr + 1
 
             prev_end_time = curr_end_time
             prev_start_time = curr_start_time
 
+            # get qpm
+            key_index = (np.abs(qpm_keys-curr_start_time)).argmin()
+            if qpm_keys[key_index] > curr_start_time:
+                key_index = key_index - 1
+            curr_qpm = qpm_dict[qpm_keys[key_index]]
             # compute how many times we want it to repeat
-            curr_qpm = time_qpm[curr_tempo_ptr][1]
+            #curr_qpm = time_qpm[curr_tempo_ptr][1]
             n = int(round(duration * curr_qpm))
 
             # if start_time is unchanged for this note
@@ -150,11 +174,24 @@ def store_in_array(file):
                 tracking_index[0] = tracking_index[0] + n
                     
             # update the pointer
-            if curr_tempo_ptr+1 < len_time_qpm:
-                next_time = time_qpm[curr_tempo_ptr+1][0]
-                if next_time <= curr_end_time:
-                    curr_tempo_ptr = curr_tempo_ptr + 1
+            #if curr_tempo_ptr+1 < len_time_qpm:
+                #next_time = time_qpm[curr_tempo_ptr+1][0]
+                #if next_time <= curr_end_time:
+                    #curr_tempo_ptr = curr_tempo_ptr + 1
     
+    # check if we need extra padding
+    channel0_len = np.zeros((5,))
+    channel1_len = np.zeros((5,))
+    for i in range(5):
+        channel0_len[i] = len(channel_0[i])
+        channel1_len[i] = len(channel_1[i])
+    max0 = np.amax(channel0_len)
+    max1 = np.amax(channel1_len)
+    for j in range(5):
+        pad0 = [0 for _ in range(int(max0 - channel0_len[j]))]
+        pad1 = [0 for _ in range(int(max1 - channel1_len[j]))]
+        channel_0[j].extend(pad0)
+        channel_1[j].extend(pad1)
     '''
     print(len(channel_0[0]))
     print(len(channel_0[1]))
@@ -169,11 +206,11 @@ def store_in_array(file):
     '''
     
     # convert to 2d arrays 
-    # DIMENSION MISMATCH
     #result_0 = np.array(channel_0)
     #result_1 = np.array(channel_1)
-
-    return channel_0, channel_1
+    result_0 = np.array([np.array(track) for track in channel_0])
+    result_1 = np.array([np.array(track) for track in channel_1])
+    return result_0, result_1
             
 
 def write_to_file(file):
@@ -192,8 +229,8 @@ def main():
     file_name = "notes.tfrecord"
     #write_to_file(file_name)
     channel0, channel1 = store_in_array(file_name)
-    #np.save('channel0',channel0)
-    #np.save('channel1',channel1)
+    np.save('channel0',channel0)
+    np.save('channel1',channel1)
 
 if __name__ == "__main__":
     main()
