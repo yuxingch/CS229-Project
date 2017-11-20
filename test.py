@@ -86,7 +86,7 @@ def store_in_array(file):
                 # clean up the tracking status
                 tracking_index = np.zeros((5,))
                 tracking_start = 0
-            
+                prev_end_time = 0
 
             gap = curr_start_time - prev_end_time
             # if there is a gap, fill the gap with 0
