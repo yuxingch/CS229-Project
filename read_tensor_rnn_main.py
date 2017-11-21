@@ -21,7 +21,8 @@ def matrix_to_input(channelMatrix):
     note_size= note_end - note_start
     
     # total time step
-    time_si
+    time_size = len(channelMatrix[0])
+    curr_vector = np.zeros((5,),dtype=np.int32)
    
     # TODO: fix batch size
     batch_size=1
@@ -56,10 +57,7 @@ def main(argv=None):
     
     sess = tf.Session(config=config)
     sess.run(tf.global_variables_initializer())
-    merged = tf.summary.merge_all()
-    summary_writer = tf.summary.FileWriter('.', sess.graph)
-    
-    _, _, loss = sess.run([merged,model.train_op, model.loss], feed_dict={placeholder['music_input']: music_input})
+    _, loss = sess.run([model.train_op, model.loss], feed_dict={placeholder['music_input']: music_input})
     
     
     print(loss)
