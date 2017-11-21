@@ -54,7 +54,7 @@ class RnnModel:
         
         loss = tf.losses.softmax_cross_entropy(target_flattened, logits=pred_flattened) 
         self.loss = tf.reduce_sum(loss)
-        tf.summary.scalar('loss', self.loss)
+      
 
 
 
