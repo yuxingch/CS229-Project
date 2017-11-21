@@ -51,10 +51,12 @@ class RnnModel:
         pred_flattened = tf.reshape(self.pred,
                                     [self.batch_size, self.range*self.input_dim], 'reshape_pred')
         # compute cost
+        
         loss = tf.losses.softmax_cross_entropy(target_flattened, logits=pred_flattened) 
         self.loss = tf.reduce_sum(loss)
+        tf.summary.scalar('loss', self.loss)
+
 
 
     
-
 
