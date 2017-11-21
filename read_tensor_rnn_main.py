@@ -21,10 +21,7 @@ def matrix_to_input(channelMatrix):
     note_size= note_end - note_start
     
     # total time step
-    time_size = len(channelMatrix[0])
    
-    # a vector of notes in a current time step 1*5
-    curr_vector = np.zeros((5,),dtype=np.int32)
     # TODO: fix batch size
     batch_size=1
     music_input= np.zeros((batch_size,note_size,time_size),dtype=np.float)
@@ -47,16 +44,17 @@ def main(argv=None):
     # channel 0
     channelMatrix = np.load('channel0.npy')
     channelMatrix = np.expand_dims(channelMatrix , axis=0)
+    print(channelMatrix.shape)
     music_input = matrix_to_input(channelMatrix)
     music_input = np.transpose(music_input)
-    #print(len(music_input[:,-1]))
+    print(music_input.shape)
     
     placeholder = tensorflow_music_input(music_input)
     model = RnnModel(placeholder)
     
-    config = tf.ConfigProto(log_device_placement=True)
+    config = tf.ConfigProto(log_device_placement=False)
     sess = tf.Session(config=config)
-    sess.run(tf.global_variable_initializer())
+    sess.run(tf.global_variables_initializer())
     
     _, loss = sess.run([model.train_op, model.loss], feed_dict={placeholder['music_input']: music_input})
     
