@@ -14,15 +14,16 @@ class RnnModel:
         # Initial state of the LSTM memory.
         self.music_input = placeholder['music_input']
         self.batch_size = tf.shape(self.music_input)[0]
-        self.range = tf.shape(self.music_input)[1]
-        self.input_dim = tf.shape(self.music_input)[2]
-        self.targets_pitch = self.music_input[min_step:,:]
+        self.time_range = tf.shape(self.music_input)[1]
+        self.note_input_dim = tf.shape(self.music_input)[2]
+        self.targets_pitch = self.music_input[:,min_step:,:]
         self.initial_state = self.rnn_cell.zero_state(self.batch_size, dtype=tf.float32)
         self.build()
         self.loss()
         
         optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
         self.train_op = optimizer.minimize(self.loss)
+        
 
     def build(self):
 
@@ -47,14 +48,14 @@ class RnnModel:
 
     def loss(self):
         target_flattened = tf.reshape(self.targets_pitch, 
-                                      [self.batch_size, self.range*self.input_dim], 'reshape_target')
+                                      [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_target')
         pred_flattened = tf.reshape(self.pred,
-                                    [self.batch_size, self.range*self.input_dim], 'reshape_pred')
+                                    [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_pred')
         # compute cost
         
         loss = tf.losses.softmax_cross_entropy(target_flattened, logits=pred_flattened) 
         self.loss = tf.reduce_sum(loss)
-      
+        # tf.summary.scalar('loss', self.loss)
 
 
 
