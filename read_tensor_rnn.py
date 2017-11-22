@@ -16,25 +16,46 @@ class RnnModel:
         self.batch_size = tf.shape(self.music_input)[0]
         self.time_range = tf.shape(self.music_input)[1]
         self.note_input_dim = tf.shape(self.music_input)[2]
-        self.targets_pitch = self.music_input[:,min_step:,:]
+        self.targets_pitch = self.music_input[:,-1,:]
         self.initial_state = self.rnn_cell.zero_state(self.batch_size, dtype=tf.float32)
         self.build()
         self.loss()
         
-        optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-        self.train_op = optimizer.minimize(self.loss)
-        
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.1)
+        self.grads_and_vars = self.optimizer.compute_gradients(self.loss)
+        clipped_grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var) 
+                for grad, var in self.grads_and_vars]
+        self.grad, _ = clipped_grads_and_vars[0]
+        self.train_op = self.optimizer.apply_gradients(clipped_grads_and_vars)
 
     def build(self):
 
+        self.embeddings = tf.get_variable('note_embedding', shape=(self.state_dim, self.state_dim),
+                                                 dtype=tf.float32, 
+                                                 initializer=tf.contrib.layers.xavier_initializer())
+
+        music_input_reshaped = tf.reshape(self.music_input, [self.batch_size * self.time_range, self.state_dim])
+        self.music_input = tf.matmul(music_input_reshaped, self.embeddings)
+        self.music_input = tf.reshape(self.music_input, [self.batch_size, self.time_range, self.state_dim])
+
         # The value of state is updated after processing each batch of notes.
         # The LSTM output can be used to make next pitch predictions
-        outputs, state = tf.nn.dynamic_rnn(self.rnn_cell, self.music_input,
-                                       initial_state=self.initial_state,
-                                       dtype=tf.float32)
+        self.outputs, state = tf.nn.dynamic_rnn(self.rnn_cell, self.music_input[:, :-1, :],
+                                      initial_state=self.initial_state,
+                                      dtype=tf.float32)
+                                      
+        
+        # self.vars = {}
+        # prev_vec = tf.reshape(self.music_input[:, -2, :], [self.batch_size, self.note_input_dim])
+        # self.vars['weights'] = tf.get_variable('weights', shape=(self.state_dim, self.state_dim),
+        #                                         dtype=tf.float32, 
+        #                                         initializer=tf.contrib.layers.xavier_initializer())
+        # self.vars['bias'] = tf.get_variable('bias', shape=[self.state_dim], dtype=tf.float32,
+        #                                     initializer=tf.constant_initializer(0.0))
+        # outputs = tf.matmul(prev_vec, self.vars['weights']) + self.vars['bias']
          
-        #output_trunc = outputs[:-min_step, :]
-        #output_flattened = tf.reshape(output_truc, shape=[self.batch_size, 
+        # output_trunc = outputs[:-min_step, :]
+        # output_flattened = tf.reshape(output_truc, shape=[self.batch_size, 
         #                                                  tf.shape(output_trunc)[1] *
         #                                                  tf.shape(output_truct)[2]],
         #                              name='flatten_output')
@@ -42,28 +63,27 @@ class RnnModel:
         #W = tf.get_variable(name='weight',shape=(,128),dtype=tf.float32)
         #b = tf.get_variable(name='bias',shape=128,dtype=tf.float32)
         #logit = tf.matmul(outputs, W) + b 
-        prob= tf.nn.softmax(outputs) 
-        self.pred = prob[:, :-self.min_step, :]
+        #prob= tf.nn.softmax(self.outputs) 
+        prob = tf.nn.sigmoid(self.outputs)
+        self.pred = prob[:, -1, :]
+        # self.pred = prob
 
 
     def loss(self):
-        target_flattened = tf.reshape(self.targets_pitch, 
-                                      [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_target')
-        pred_flattened = tf.reshape(self.pred,
-                                    [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_pred')
+        #target_flattened = tf.reshape(self.targets_pitch, 
+        #                              [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_target')
+        #pred_flattened = tf.reshape(self.pred,
+        #                            [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_pred')
+
         # compute cost
         
-        loss = tf.losses.softmax_cross_entropy(target_flattened, logits=pred_flattened) 
-        self.loss = tf.reduce_sum(loss)
+        #loss = tf.losses.softmax_cross_entropy(self.targets_pitch, logits=self.pred) 
+        #self.loss = tf.reduce_mean(loss)
+        self.loss = tf.nn.l2_loss(self.targets_pitch - self.pred)
         tf.summary.scalar('loss', self.loss)
 
         
         
         #compute accuracy
-        correct_pred = tf.equal(tf.argmax(pred_flattened,1), tf.argmax(target_flattened,1))
-        self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-
-
-
-    
-
+        #correct_pred = tf.equal(tf.argmax(pred_flattened,1), tf.argmax(target_flattened,1))
+        #self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
