@@ -51,16 +51,16 @@ def matrix_to_input(channelMatrix):
     
 def main(argv=None):  
     # channel 0, timestep from 1:50
-    channelMatrix = np.load('channel0.npy')
+    originalMatrix = np.load('new_channel0.npy')
     #print(channelMatrix.shape)
-    channelMatrix = channelMatrix[:,:5000]
+    channelMatrix = originalMatrix[:,:5000,:]
     
     # tranpose the matrix, now its dimension is timestep*note_size
-    channelMatrix  = np.transpose(channelMatrix )
+    #channelMatrix  = np.transpose(channelMatrix )
     #print(channelMatrix.shape)
     
     #expand dimension, now batch_size*time*note_size
-    channelMatrix = np.expand_dims(channelMatrix , axis=0)
+    #channelMatrix = np.expand_dims(channelMatrix , axis=0)
     #print(channelMatrix.shape)
     
     #expand note_size from 5*1 to 128*1
@@ -77,10 +77,18 @@ def main(argv=None):
     # start tensorflow session
     sess = tf.Session(config=config)
     sess.run(tf.global_variables_initializer())
-    _, loss = sess.run([model.train_op, model.loss], feed_dict={placeholder['music_input']: music_input})
+    merged = tf.summary.merge_all()
+    #summary_writer
+    
+    for i in range(18):
+        left = 5000*i
+        right = 5000*(i+1)
+        channelMatrix = originalMatrix[:,left:right,:]
+        music_input = matrix_to_input(channelMatrix)
+        _,_, loss,accuracy = sess.run([merged,model.train_op, model.loss, model.accuracy], feed_dict={placeholder['music_input']: music_input})
     
     print(loss)
-    
+    print(accuracy)
     
 if __name__ == "__main__":
     tf.app.run()
