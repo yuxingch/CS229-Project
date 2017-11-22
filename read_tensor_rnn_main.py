@@ -46,7 +46,7 @@ def matrix_to_input(channelMatrix):
     #print(curr_vector)
     #print(music_input[m][i])
            
-    return music_input
+    return music_input 
     
     
 def main(argv=None):  

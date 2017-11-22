@@ -32,7 +32,7 @@ class RnnModel:
         outputs, state = tf.nn.dynamic_rnn(self.rnn_cell, self.music_input,
                                        initial_state=self.initial_state,
                                        dtype=tf.float32)
-        
+         
         #output_trunc = outputs[:-min_step, :]
         #output_flattened = tf.reshape(output_truc, shape=[self.batch_size, 
         #                                                  tf.shape(output_trunc)[1] *
