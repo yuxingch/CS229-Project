@@ -134,8 +134,10 @@ def store_in_array(file):
                 pad1 = np.zeros((a,end_len,c))
                 pad0[:,:b,:] = all_channel0
                 pad1[:,:b,:] = all_channel1
-                all_channel0 = np.concatenate((pad0, np.transpose(channel_0)), axis=0)
-                all_channel1 = np.concatenate((pad1, np.transpose(channel_1)), axis=0)
+                channel_0 = np.expand_dims(np.transpose(channel_0),axis=0)
+                channel_1 = np.expand_dims(np.transpose(channel_1),axis=0)
+                all_channel0 = np.concatenate((pad0, channel_0), axis=0)
+                all_channel1 = np.concatenate((pad1, channel_1), axis=0)
 
     return all_channel0, all_channel1
             
