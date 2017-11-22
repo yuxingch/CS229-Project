@@ -6,7 +6,7 @@ from read_tensor_rnn import RnnModel
 import numpy as np
 import tensorflow as tf
 import math
-
+from random import randint
 
 
 def tensorflow_music_input(music_input):
@@ -29,7 +29,7 @@ def matrix_to_input(channelMatrix):
     #print(curr_vector)
    
     # TODO: fix batch size
-    batch_size=1
+    batch_size=channelMatrix.shape[0]
     music_input= np.zeros((batch_size,time_size,note_size),dtype=np.float)
     
     #print(music_input.shape)
@@ -53,7 +53,7 @@ def main(argv=None):
     # channel 0, timestep from 1:50
     originalMatrix = np.load('new_channel0.npy')
     #print(channelMatrix.shape)
-    channelMatrix = originalMatrix[:,:5000,:]
+    channelMatrix = originalMatrix[:,:2,:]
     
     # tranpose the matrix, now its dimension is timestep*note_size
     #channelMatrix  = np.transpose(channelMatrix )
@@ -77,9 +77,11 @@ def main(argv=None):
     # start tensorflow session
     sess = tf.Session(config=config)
     sess.run(tf.global_variables_initializer())
+    print( tf.trainable_variables())
     merged = tf.summary.merge_all()
     #summary_writer
-    
+    max_value = originalMatrix.shape[1] - originalMatrix.shape[1] % 5000 - 1
+    '''
     for i in range(18):
         left = 5000*i
         right = 5000*(i+1)
@@ -87,8 +89,20 @@ def main(argv=None):
         music_input = matrix_to_input(channelMatrix)
         _,_, loss,accuracy = sess.run([merged,model.train_op, model.loss, model.accuracy], feed_dict={placeholder['music_input']: music_input})
     
-    print(loss)
-    print(accuracy)
+        print(loss)
+        print(accuracy)
+    '''
+    for _ in range(100):
+        i = randint(10000, 20000)
+        channelMatrix = originalMatrix[:,i:i+2,:]
+        music_input = matrix_to_input(channelMatrix)
+        _,_, loss, grad, pred = sess.run([merged, model.train_op, model.loss, model.grad, model.pred], feed_dict={placeholder['music_input']: music_input})
+     
+        print(loss)
+        print(grad)
+        
+        #print(accuracy)
+
     
 if __name__ == "__main__":
     tf.app.run()
