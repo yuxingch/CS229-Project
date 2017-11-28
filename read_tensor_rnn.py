@@ -25,7 +25,9 @@ class RnnModel:
         self.grads_and_vars = self.optimizer.compute_gradients(self.loss)
         clipped_grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var) 
                 for grad, var in self.grads_and_vars]
-        self.grad, _ = clipped_grads_and_vars[0]
+        self.grad, _ = clipped_grads_and_vars[1]
+        for _, var in clipped_grads_and_vars:
+            print(var.name)
         self.train_op = self.optimizer.apply_gradients(clipped_grads_and_vars)
 
     def build(self):
@@ -77,9 +79,9 @@ class RnnModel:
 
         # compute cost
         
-        #loss = tf.losses.softmax_cross_entropy(self.targets_pitch, logits=self.pred) 
-        #self.loss = tf.reduce_mean(loss)
-        self.loss = tf.nn.l2_loss(self.targets_pitch - self.pred)
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.targets_pitch, logits=self.pred) 
+        self.loss = tf.reduce_mean(loss)
+        #self.loss = tf.nn.l2_loss(self.targets_pitch - self.pred)
         tf.summary.scalar('loss', self.loss)
 
         

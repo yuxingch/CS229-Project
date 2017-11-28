@@ -4,14 +4,15 @@ from __future__ import print_function
 from read_tensor_rnn import RnnModel
 
 import numpy as np
+from numpy import linalg as LA
 import tensorflow as tf
 import math
 from random import randint
 
 
-def tensorflow_music_input(music_input):
+def tensorflow_music_input(music_input, seq_len):
     
-    t_music_input = tf.placeholder(tf.float32,shape=[None,music_input.shape[1],music_input.shape[2]],
+    t_music_input = tf.placeholder(tf.float32,shape=[None,seq_len,music_input.shape[2]],
                                    name='music_input')
     return {'music_input':t_music_input}
 
@@ -23,7 +24,7 @@ def matrix_to_input(channelMatrix):
     note_size= note_end - note_start
     
     # total time step
-    time_size = len(channelMatrix[0])
+    time_size = channelMatrix.shape[1]
     #print(time_size)
     curr_vector = np.zeros((5,),dtype=np.int32)
     #print(curr_vector)
@@ -52,8 +53,7 @@ def matrix_to_input(channelMatrix):
 def main(argv=None):  
     # channel 0, timestep from 1:50
     originalMatrix = np.load('new_channel0.npy')
-    #print(channelMatrix.shape)
-    channelMatrix = originalMatrix[:,:2,:]
+    channelMatrix = originalMatrix[:,10000:-10000,:]
     
     # tranpose the matrix, now its dimension is timestep*note_size
     #channelMatrix  = np.transpose(channelMatrix )
@@ -70,7 +70,8 @@ def main(argv=None):
     #print((music_input.shape)[1])
     #print((music_input.shape)[2])
     
-    placeholder = tensorflow_music_input(music_input)
+    seq_len = 50
+    placeholder = tensorflow_music_input(music_input, seq_len)
     model = RnnModel(placeholder) 
     config = tf.ConfigProto(log_device_placement=False)
     
@@ -92,14 +93,15 @@ def main(argv=None):
         print(loss)
         print(accuracy)
     '''
-    for _ in range(100):
-        i = randint(10000, 20000)
-        channelMatrix = originalMatrix[:,i:i+2,:]
-        music_input = matrix_to_input(channelMatrix)
-        _,_, loss, grad, pred = sess.run([merged, model.train_op, model.loss, model.grad, model.pred], feed_dict={placeholder['music_input']: music_input})
+    for iter in range(200000):
+        i = randint(0, channelMatrix.shape[1] - seq_len)
+        batch_input = music_input[:,i:i+seq_len,:]
+        _,_, loss, grad, pred, input = sess.run([merged, model.train_op, model.loss, model.grad,
+                model.pred, model.music_input], feed_dict={placeholder['music_input']: batch_input})
      
-        print(loss)
-        print(grad)
+        if iter % 1000 == 0:
+            print('Iter ', iter, ': loss=', loss)
+            print(LA.norm(grad))
         
         #print(accuracy)
 
