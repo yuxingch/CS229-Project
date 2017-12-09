@@ -99,16 +99,17 @@ def main(argv=None):
         for iter in range(200000):
             i = randint(0, channelMatrix.shape[1] - seq_len)
             batch_input = music_input[:,i:i+seq_len,:]
-            _,_, loss, grad, pred, input = sess.run([merged, model.train_op, model.loss, model.grad,
-                    model.pred, model.music_input], feed_dict={placeholder['music_input']: batch_input})
-
+            # _,_, loss, grad, pred, input = sess.run([merged, model.train_op, model.loss, model.grad,
+            #         model.pred, model.music_input], feed_dict={placeholder['music_input']: batch_input})
+            _,_, loss, grad, input = sess.run([merged, model.train_op, model.loss, model.grad,
+                    model.music_input], feed_dict={placeholder['music_input']: batch_input})
             if iter % 1000 == 0:
                 print('Iter ', iter, ': loss=', loss)
                 curr_grad = LA.norm(grad)
                 print(curr_grad)
                 if curr_grad < 1e-6:
                     break
-            
+
             #print(accuracy)
         print("Loss for epoch %d = %f" % (epoch,loss)) #use this if we wanna generate a plot of loss vs. epoch
     print("Done Training")
