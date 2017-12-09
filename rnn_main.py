@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from read_tensor_rnn import RnnModel
+from rnn_model import RnnModel
 
 import numpy as np
 from numpy import linalg as LA
@@ -104,10 +104,13 @@ def main(argv=None):
 
             if iter % 1000 == 0:
                 print('Iter ', iter, ': loss=', loss)
-                print(LA.norm(grad))
-
+                curr_grad = LA.norm(grad)
+                print(curr_grad)
+                if curr_grad < 1e-6:
+                    break
+            
             #print(accuracy)
-        print("Loss for epoch %d = %f" % (epoch,_loss)) #use this if we wanna generate a plot of loss vs. epoch
+        print("Loss for epoch %d = %f" % (epoch,loss)) #use this if we wanna generate a plot of loss vs. epoch
     print("Done Training")
     '''
     ## try music generation:
