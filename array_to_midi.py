@@ -47,7 +47,7 @@ def store_in_midi(input_left, input_right):
     notes_left = []
     notes_right = []
     for layer in range(5):
-        print ("current layer: ", layer)
+        #print ("current layer: ", layer)
         music_left = input_left[0,:,layer]
         music_right = input_right[0,:,layer]
         # left
