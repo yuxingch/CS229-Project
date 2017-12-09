@@ -92,8 +92,8 @@ class RnnModel:
         #logit = tf.matmul(outputs, W) + b 
         #prob= tf.nn.softmax(self.outputs) 
         self.logits = tf.reshape(output,[self.out_batch_size,self.out_time_range,self.out_note_input_dim])
-        prob = tf.nn.sigmoid(self.logits)
-        self.pred = prob[:, -1, :]
+        #prob = tf.nn.sigmoid(self.logits)
+        self.logits= self.logits[:, -1, :]
         # self.pred = prob
 
 
@@ -105,7 +105,7 @@ class RnnModel:
 
         # compute cost
         
-        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.targets_pitch, logits=self.pred) 
+        loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.targets_pitch, logits=self.logits) 
         self.loss = tf.reduce_mean(loss)
         #self.loss = tf.nn.l2_loss(self.targets_pitch - self.pred)
         tf.summary.scalar('loss', self.loss)
