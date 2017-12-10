@@ -31,7 +31,7 @@ class RnnModel:
         self.build()
         self.loss()
         
-        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.1)
+        self.optimizer = tf.train.AdamOptimizer(learning_rate=0.005)
         self.grads_and_vars = self.optimizer.compute_gradients(self.loss)
         clipped_grads_and_vars = [(tf.clip_by_value(grad, -5.0, 5.0) if grad is not None else None, var) 
                 for grad, var in self.grads_and_vars]
