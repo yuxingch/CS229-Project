@@ -122,3 +122,22 @@ class RnnModel:
     
     def inference(self):
         
+    def inference_pseudo(self):
+        # run after build() in init
+        # if inference() is run, music_input is of dimension 
+        # [batch_size x existing time steps x note_input_dim]
+
+        # encode existing notes
+        curr_state = self.initial_state
+        for i in range(self.time_range):
+            output, curr_state = self.rnn_cell(self.music_input[:,i,:]) # some other params for cell
+        
+        outputs = []
+        # predict next n steps
+        # n can be passed in via placeholder, or just a constant
+        for i in range(n):
+            output, curr_state = self.rnn_cell(input=output, state=state) # some other params
+            outputs.append(output)
+
+        self.outputs = tf.stack(outputs, axis=1, name='stack_lstm_outputs')
+
