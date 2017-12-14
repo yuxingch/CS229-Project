@@ -142,7 +142,7 @@ class RnnModel:
             logits = tf.reshape(logits,[self.batch_size,self.time_range,self.note_input_dim])
             output = tf.nn.sigmoid(logits)
             # code for at mos5 5 note
-            
+            '''
             k_index = tf.nn.top_k(output[-1], k, name=None)
             indices = k_index.indices
             values=[1.0]
@@ -152,7 +152,7 @@ class RnnModel:
             output = c + tf.sparse_tensor_to_dense(delta)
             # code for one note 
             
-            
+            '''
             index = (tf.argmax(output[-1], 1))
             indices = [[0,0,index[0]]]
             values = [1.0]
