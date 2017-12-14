@@ -16,7 +16,7 @@ def bias_initializer(shape):
 
 class RnnModel:
     
-    def __init__(self, placeholder, min_step=10, state_dim=128,in_training= True):
+    def __init__(self, placeholder, min_step=10, state_dim=128):
         self.min_step = min_step
         self.state_dim = state_dim
         self.rnn_cell = tf.contrib.rnn.BasicLSTMCell(state_dim)
@@ -27,12 +27,11 @@ class RnnModel:
         self.note_input_dim = tf.shape(self.music_input)[2]
         self.note_out_dim = tf.shape(self.music_input)[2]
         self.targets_pitch = self.music_input[:,-1,:]
-        if not in_training:    
-            self.batch_size = 1
-            self.time__range = 1
+        
         self.initial_state = self.rnn_cell.zero_state(self.batch_size, dtype=tf.float32)
         self.build()
         self.loss()
+        self.inference()
         ###### variable for test case if not training #####
         
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.005)
@@ -43,6 +42,9 @@ class RnnModel:
         for _, var in clipped_grads_and_vars:
             print(var.name)
         self.train_op = self.optimizer.apply_gradients(clipped_grads_and_vars)
+        
+        ### 
+        self.inference()
 
     def build(self):
 
@@ -56,7 +58,7 @@ class RnnModel:
 
         # The value of state is updated after processing each batch of notes.
         # The LSTM output can be used to make next pitch predictions
-        self.outputs, state = tf.nn.dynamic_rnn(self.rnn_cell, self.music_input[:, :-1, :],
+        self.outputs, self.state = tf.nn.dynamic_rnn(self.rnn_cell, self.music_input[:, :-1, :],
                                       initial_state=self.initial_state,
                                       dtype=tf.float32)
         
@@ -67,12 +69,12 @@ class RnnModel:
         
         #self.b = tf.Variable(tf.zeros([128]))
         
-        weights = tf.Variable(tf.random_normal([self.state_dim, 128]))
-        bias = tf.Variable(tf.zeros([128]))
+        self.weights = tf.Variable(tf.random_normal([self.state_dim, 128]))
+        self.bias = tf.Variable(tf.zeros([128]))
         
         
         output = tf.reshape(self.outputs,[self.out_batch_size*self.out_time_range,self.out_note_input_dim ])
-        self.logits = tf.matmul(output,weights)+ bias
+        self.logits = tf.matmul(output,self.weights)+ self.bias
         
         
         #self.logits = tf.reshape(self.logits,[self.batch_size,self.time_range,self.note_out_dim])
@@ -120,24 +122,69 @@ class RnnModel:
         #correct_pred = tf.equal(tf.argmax(pred_flattened,1), tf.argmax(target_flattened,1))
         #self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
     
-    def inference(self):
+    def inference(self,n=20,time_range=1,note_size=128,k=5):
         
-    def inference_pseudo(self):
         # run after build() in init
         # if inference() is run, music_input is of dimension 
         # [batch_size x existing time steps x note_input_dim]
 
         # encode existing notes
         curr_state = self.initial_state
-        for i in range(self.time_range):
-            output, curr_state = self.rnn_cell(self.music_input[:,i,:]) # some other params for cell
+        
+        for i in range(time_range):
+            
+            music_input_reshaped = tf.reshape(self.music_input, [self.batch_size * self.time_range, self.state_dim])
+            self.music_input = tf.matmul(music_input_reshaped, self.embeddings)
+            self.music_input = tf.reshape(self.music_input, [self.batch_size, self.time_range, self.state_dim])
+            output, curr_state = self.rnn_cell(self.music_input[:,i,:],state=curr_state) # some other params for cell
+            output = tf.reshape(output,[self.batch_size * self.time_range,self.note_input_dim])
+            logits = tf.matmul(output,self.weights)+ self.bias
+            logits = tf.reshape(logits,[self.batch_size,self.time_range,self.note_input_dim])
+            output = tf.nn.sigmoid(logits)
+            # code for at mos5 5 note
+            
+            k_index = tf.nn.top_k(output[-1], k, name=None)
+            indices = k_index.indices
+            values=[1.0]
+            shape = [1,1,128]
+            delta = tf.SparseTensor(indices, values, shape)
+            c = tf.constant(0.0,shape=[1,1,128])
+            output = c + tf.sparse_tensor_to_dense(delta)
+            # code for one note 
+            
+            
+            index = (tf.argmax(output[-1], 1))
+            indices = [[0,0,index[0]]]
+            values = [1.0]
+            shape = [1,1,128]
+            delta = tf.SparseTensor(indices, values, shape)
+            c = tf.constant(0.0,shape=[1,1,128])
+            output = c + tf.sparse_tensor_to_dense(delta)
+            
+            
+
         
         outputs = []
+        outputs.append(output)
         # predict next n steps
         # n can be passed in via placeholder, or just a constant
         for i in range(n):
-            output, curr_state = self.rnn_cell(input=output, state=state) # some other params
+            music_input_reshaped = tf.reshape(self.music_input, [self.batch_size * self.time_range, self.state_dim])
+            self.music_input = tf.matmul(music_input_reshaped, self.embeddings)
+            self.music_input = tf.reshape(self.music_input, [self.batch_size, self.time_range, self.state_dim])
+            output, curr_state = self.rnn_cell(output[:,-1,:], state=curr_state) # some other params
+            output = tf.reshape(output,[self.batch_size * self.time_range,self.note_input_dim])
+            logits = tf.matmul(output,self.weights)+ self.bias
+            logits = tf.reshape(logits,[self.batch_size,self.time_range,self.note_input_dim])
+            output = tf.nn.sigmoid(logits)
+            index = (tf.argmax(output[-1], 1))
+            indices = [[0,0,index[0]]]
+            values = [1.0]
+            shape = [1,1,128]
+            delta = tf.SparseTensor(indices, values, shape)
+            c = tf.constant(0.0,shape=[1,1,128])
+            output = c + tf.sparse_tensor_to_dense(delta)
             outputs.append(output)
-
-        self.outputs = tf.stack(outputs, axis=1, name='stack_lstm_outputs')
-
+            
+        self.outputs_vec = outputs   
+        #self.outputs_vec = tf.stack(outputs, axis=1, name='stack_lstm_outputs')
