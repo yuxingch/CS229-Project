@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from rnn_model import RnnModel
+from rnn_model_with_generation import RnnModel
 
 import numpy as np
 from numpy import linalg as LA
@@ -12,7 +12,7 @@ from random import randint
 
 def tensorflow_music_input(music_input, seq_len):
     
-    t_music_input = tf.placeholder(tf.float32,shape=[None,seq_len,music_input.shape[2]],
+    t_music_input = tf.placeholder(tf.float32,shape=[None,None,music_input.shape[2]],
                                    name='music_input')
     return {'music_input':t_music_input}
 
@@ -53,7 +53,7 @@ def matrix_to_input(channelMatrix):
 def main(argv=None):  
     # channel 0, timestep from 1:50
     originalMatrix = np.load('new_channel0.npy')
-    channelMatrix = originalMatrix[:,10000:-10000,:]
+    channelMatrix = originalMatrix[:,10000:10:-10000,:]
     
     # tranpose the matrix, now its dimension is timestep*note_size
     #channelMatrix  = np.transpose(channelMatrix )
@@ -92,7 +92,12 @@ def main(argv=None):
     
         print(loss)
         print(accuracy)
+        
+        
     '''
+    saver = tf.train.Saver(tf.global_variables())
+    '''
+
     num_epoch =4
     print(music_input.shape[2])
     for epoch in range(num_epoch):
@@ -112,40 +117,67 @@ def main(argv=None):
 
             #print(accuracy)
         print("Loss for epoch %d = %f" % (epoch,loss)) #use this if we wanna generate a plot of loss vs. epoch
+    # Save model
+    saver.save(sess, './my_model')
     print("Done Training")
     
-    
+    '''
     
     # music generation
-    
-    model = RnnModel(placeholder,in_training=False)
+    seq_len = 1
     ## initialization :
-    state_dim=128   
+    state_dim= 128   
     batch_size = 1
     time_range = 1
     note_input_dim = 128
     # n is the length of result music
     n = 100
+   
     
     # initialize,given note
-    seq = np.zeros(n,note_input_dim)
+
+
+    saver = tf.train.import_meta_graph('my_model.meta')
+    saver.restore(sess, tf.train.latest_checkpoint('./'))
+    
+    '''
+    try:
+        saver.restore(sess, checkpoint.model_checkpoint_path)
+        print('Model restored !')
+    except Exception as e:
+        print(e)
+        return
+    '''   
+    # Get the sample text
+    
+    
+    seq = np.zeros((n,note_input_dim))
     input_note = 60
-    seq[0][59] = 1
+    seq[0][48] = 1.0
+    seq[0][53] = 1.0
+    seq[0][82] = 1.0
     
     
+    seq_len = 1
     start = np.expand_dims(seq[0], axis=0)
     start = np.expand_dims(start, axis=0)
-    for i in range(1,n):
-        new_out_logits, new_state_gen = sess.run([model.logits,model.state], feed_dict={placeholder['music_input']:start})
-        index = int(tf.argmax(new_out_logits[-1], 1).eval())
-        seq[i][index]=1
-        start = np.expand_dims(seq[i], axis=0)
-        start = np.expand_dims(start, axis=0)
+    
+    output = sess.run([model.outputs_vec], feed_dict={placeholder['music_input']: start})
+    print(output)
+    print('Done, start rescaling!')
+    # turn output into a vector of  1 * 5 * time)step
+    '''
+    rescale_output = np.zeros((1,5,1000))
+    for j in range(5):
+        for i in range(1000):
+            if(j==0):
+                rescale_output[0][j][i] = int(np.argmax(output[i][-1], 1))
+            else:
+                rescale_output[0][j][i] = 0.0
         
-    current = seq
-    print('Final: {}'.format(current))
-    
-    
+    np.save('output_music.npy',rescale_output)
+    '''
+    print('rescaling done!')
     
 if __name__ == "__main__":
     tf.app.run()
