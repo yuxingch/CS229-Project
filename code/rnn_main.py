@@ -34,12 +34,9 @@ def matrix_to_input(channelMatrix):
     #print(time_size)
     curr_vector = np.zeros((5,),dtype=np.int32)
     #print(curr_vector)
-   
-    # TODO: fix batch size
     batch_size=channelMatrix.shape[0]
     music_input= np.zeros((batch_size,time_size,note_size),dtype=np.float)
-    
-    #print(music_input.shape)
+  
     # resize the note vector to 1*note_size
     for m in range(batch_size):
         for i in range(time_size):  
@@ -48,14 +45,11 @@ def matrix_to_input(channelMatrix):
                 #print(channelMatrix[m][i][j])
                 if(curr_vector[j]==0):
                     continue
-                music_input[m][i][curr_vector[j]-note_start-1] = 1.0
-    
+                music_input[m][i][curr_vector[j]-note_start-1] = 1.0 
     #print(curr_vector)
     #print(music_input[m][i])
-           
     return music_input 
-    
-    
+      
 def main(argv=None):  
     # channel 0, timestep from 1:50
     originalMatrix = np.load('training_set.npy')
