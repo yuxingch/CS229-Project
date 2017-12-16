@@ -4,6 +4,7 @@ from midi_to_statematrix import midiToNoteStateMatrix
 import os
 ##### lowbound pitch :24
 ##### upperbound pitch: 102
+##### pitch range = upperbound_pitch- lowerbound_pitch
 PITCH_RANGE = 78
 path = './dev/'
 
