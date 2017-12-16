@@ -5,15 +5,6 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
-
-def weights_initializer(shape):
-    value = tf.truncated_normal(shape, stddev = 0.1)
-    return tf.Variable(value)
-
-def bias_initializer(shape):
-    value = tf.constant(0.1, shape = shape)
-    return tf.Variable(value)
-
 class RnnModel:
     '''
     def __init__(self, placeholder, min_step=10, state_dim=156):
