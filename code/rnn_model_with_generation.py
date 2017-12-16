@@ -104,28 +104,6 @@ class RnnModel:
         
         output = tf.reshape(self.outputs,[self.out_batch_size*self.out_time_range,self.out_note_input_dim ])
         self.logits = tf.matmul(output,self.weights)+ self.bias
-        
-        
-        #self.logits = tf.reshape(self.logits,[self.batch_size,self.time_range,self.note_out_dim])
-        # self.vars = {}
-        # prev_vec = tf.reshape(self.music_input[:, -2, :], [self.batch_size, self.note_input_dim])
-        # self.vars['weights'] = tf.get_variable('weights', shape=(self.state_dim, self.state_dim),
-        #                                         dtype=tf.float32, 
-        #                                         initializer=tf.contrib.layers.xavier_initializer())
-        # self.vars['bias'] = tf.get_variable('bias', shape=[self.state_dim], dtype=tf.float32,
-        #                                     initializer=tf.constant_initializer(0.0))
-        # outputs = tf.matmul(prev_vec, self.vars['weights']) + self.vars['bias']
-         
-        # output_trunc = outputs[:-min_step, :]
-        # output_flattened = tf.reshape(output_truc, shape=[self.batch_size, 
-        #                                                  tf.shape(output_trunc)[1] *
-        #                                                  tf.shape(output_truct)[2]],
-        #                              name='flatten_output')
-
-        #W = tf.get_variable(name='weight',shape=(,128),dtype=tf.float32)
-        #b = tf.get_variable(name='bias',shape=128,dtype=tf.float32)
-        #logit = tf.matmul(outputs, W) + b 
-        #prob= tf.nn.softmax(self.outputs) 
         self.logits = tf.reshape(output,[self.out_batch_size,self.out_time_range,self.out_note_input_dim])
         #prob = tf.nn.sigmoid(self.logits)
         self.logits= self.logits[:, -1, :]
@@ -133,29 +111,18 @@ class RnnModel:
 
 
     def loss(self):
-        #target_flattened = tf.reshape(self.targets_pitch, 
-        #                              [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_target')
-        #pred_flattened = tf.reshape(self.pred,
-        #                            [self.batch_size, (self.time_range-self.min_step)*self.note_input_dim], 'reshape_pred')
-
-        # compute cost
         
         loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=self.targets_pitch, logits=self.logits) 
         self.loss = tf.reduce_mean(loss)
         #self.loss = tf.nn.l2_loss(self.targets_pitch - self.pred)
         tf.summary.scalar('loss', self.loss)
 
-        
-        
-        #compute accuracy
-        #correct_pred = tf.equal(tf.argmax(pred_flattened,1), tf.argmax(target_flattened,1))
-        #self.accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-    
     def inference(self,n=100,time_range=1,note_size=156,k=5):
         
         # run after build() in init
         # if inference() is run, music_input is of dimension 
         # [batch_size x existing time steps x note_input_dim]
+        # the music output would be n+1 length
 
         # encode existing notes
         curr_state = self.initial_state
@@ -169,8 +136,8 @@ class RnnModel:
             output = tf.reshape(output,[self.batch_size * self.time_range,self.note_input_dim])
             logits = tf.matmul(output,self.weights)+ self.bias
             logits = tf.reshape(logits,[self.batch_size,self.time_range,self.note_input_dim])
-            output = tf.nn.sigmoid(logits)
-            # code for at mos5 5 note
+            output = tf.nn.sigmoid(logits)   # multiple keys could be pressed at the same time
+            ## code for at most 5 note
             '''
             k_index = tf.nn.top_k(output[-1], k, name=None)
             indices = k_index.indices
@@ -179,9 +146,9 @@ class RnnModel:
             delta = tf.SparseTensor(indices, values, shape)
             c = tf.constant(0.0,shape=[1,1,128])
             output = c + tf.sparse_tensor_to_dense(delta)
-            # code for one note 
-            
-            
+            '''
+            '''
+            ## code for one note 
             index = (tf.argmax(output[-1], 1))
             indices = [[0,0,index[0]]]
             values = [1.0]
@@ -190,11 +157,10 @@ class RnnModel:
             c = tf.constant(0.0,shape=[1,1,156])
             output = c + tf.sparse_tensor_to_dense(delta)
             '''
+            ### set a probability threshold
             c = tf.constant(0.999999,shape = [1,1,156])
             output = tf.ceil(output - c)
             
-            
-        
         outputs = []
         outputs.append(output)
         # predict next n steps
@@ -208,6 +174,7 @@ class RnnModel:
             logits = tf.matmul(output,self.weights)+ self.bias
             logits = tf.reshape(logits,[self.batch_size,self.time_range,self.note_input_dim])
             output = tf.nn.sigmoid(logits)
+            # code for one note only
             '''
             index = (tf.argmax(output[-1], 1))
             indices = [[0,0,index[0]]]
@@ -222,4 +189,4 @@ class RnnModel:
             outputs.append(output)
             
         self.outputs_vec = outputs   
-        #self.outputs_vec = tf.stack(outputs, axis=1, name='stack_lstm_outputs')
+       
