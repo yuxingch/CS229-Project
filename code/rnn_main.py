@@ -84,7 +84,6 @@ def main(argv=None):
 
     # first state
     state = np.zeros((music_input.shape[0], state_dim))
-    
     ############################ training set ###########################3
     for epoch in range(num_epoch):
         print ('++++++++++++++++')
