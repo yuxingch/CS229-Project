@@ -6,7 +6,8 @@ from midi_to_statematrix import noteStateMatrixToMidi
 def main():
     input_array = np.load('predict.npy')
     print (input_array.shape)
-    result = np.zeros((101,78,2))
+    # convert the numpy array of dimension (101 * 156 *1) to (101 * 78 * 2)
+    result = np.zeros((101,78,2)) 
     for j in range(101):
         i = 0
         while i < 156:
@@ -16,7 +17,7 @@ def main():
                     result[j,i/2,1] = input_array[j,i+1]
             i = i + 2
     print (result)
-    noteStateMatrixToMidi(result, name="ex6")
+    noteStateMatrixToMidi(result, name="ex6") # transform back to midi-file
 
 if __name__ == "__main__":
     main()
