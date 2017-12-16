@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from rnn_model import RnnModel
+from rnn_model_2_hidden_layers import RnnModel
 
 import os
 import numpy as np
@@ -51,7 +51,6 @@ def matrix_to_input(channelMatrix):
     return music_input 
       
 def main(argv=None):  
-    # channel 0, timestep from 1:50
     originalMatrix = np.load('training_set.npy')
     print(originalMatrix.shape)
     channelMatrix = originalMatrix[:,:,:]
@@ -98,7 +97,6 @@ def main(argv=None):
         for iter in range(2000):
             # check the starting point
             if i > channelMatrix.shape[1] - seq_len:
-                print ("hiiiii")
                 break
             batch_input = music_input[:,i:i+seq_len,:]
 
@@ -130,7 +128,6 @@ def main(argv=None):
         i = randint(0, 100)    # choose a random start point
         for iter in range(2000):  # feed a sequence of length seq into the placeholder
             if i > dev_input.shape[1] - seq_len:
-                print ("hiiiii")
                 break
             batch_input = dev_input[:,i:i+seq_len,:]
 
