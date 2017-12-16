@@ -3,10 +3,14 @@ import midi, numpy
 lowerBound = 24
 upperBound = 102
 
+# transform a midi-file into a matrix of dimension batch_size * time_range * 78 * 2
+# each note could have states (1,0) (1,1) (0,0).
+# (1,1) press a new key
+# (1,0) keep playing
+# (0,0) loose the key
 def midiToNoteStateMatrix(midifile):
 
     pattern = midi.read_midifile(midifile)
-
     timeleft = [track[0].tick for track in pattern]
 
     posns = [0 for track in pattern]
@@ -60,6 +64,9 @@ def midiToNoteStateMatrix(midifile):
         time += 1
 
     return statematrix
+
+
+### transform the output matrix back into midi-file
 
 def noteStateMatrixToMidi(statematrix, name="example"):
     statematrix = numpy.asarray(statematrix)
