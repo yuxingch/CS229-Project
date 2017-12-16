@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from rnn_model import RnnModel
+from rnn_model_1_hidden_layer import RnnModel
 
 import os
 
@@ -150,7 +150,6 @@ def main(argv=None):
         for iter in range(2000):
             # check the starting point
             if i > channelMatrix.shape[1] - seq_len:
-                print ("hiiiii")
                 break
             batch_input = music_input[:,i:i+seq_len,:]
 
@@ -181,7 +180,6 @@ def main(argv=None):
         i = randint(0, 100)
         for iter in range(2000):
             if i > dev_input.shape[1] - seq_len:
-                print ("hiiiii")
                 break
             batch_input = dev_input[:,i:i+seq_len,:]
 
@@ -202,63 +200,12 @@ def main(argv=None):
                 print ("avg_loss is: ", avg_loss)
     
 
-        # print ('%-------%')
-        # for iter in range(200000):
-        #     i = randint(0, dev_set.shape[1] - seq_len)
-        #     batch_input = dev_input[:,i:i+seq_len,:]
-        #     # _,_, loss, grad, pred, input = sess.run([merged, model.train_op, model.loss, model.grad,
-        #     #         model.pred, model.music_input], feed_dict={placeholder['music_input']: batch_input})
-        #     val,_, loss, grad, input = sess.run([merged, model.train_op, model.loss, model.grad,
-        #             model.music_input], feed_dict={placeholder['music_input']: batch_input})
-        #     if iter % 1000 == 0:
-        #         if initial_flag_dev:
-        #             dev_writer.add_summary(val,0)
-        #             initial_flag_dev = False
-        #         print('Iter ', iter, ': loss=', loss)
-        #         curr_grad = LA.norm(grad)
-        #         print(curr_grad)
-        #         if curr_grad < 1e-6:
-        #             dev_writer.add_summary(val,epoch+1)
-        #             break
-
             #print(accuracy)
         print("Loss for epoch %d = %f" % (epoch,loss)) #use this if we wanna generate a plot of loss vs. epoch
     # print (min_loss)
     # saver.save(sess, './hinge_model')
     print("Done Training")
-    '''
-    ## try music generation:
     
-    ## initialization :
-    state_dim=128   
-    batch_size = music_input.shape[0]
-    time_range = music_input.shape[1]
-    note_input_dim = music_input.shape[2]
-    note_output_dim = music_input.shape[2]
-    print()
-    new_state_gen = np.zeros([1,2*state_dim])
-    start_vec = tf.placeholder(tf.float32,[1,1,note_input_dim])
-    in_state = tf.placeholder(tf.float32,[1,2*state_dim])
-    output, new_state = tf.nn.dynamic_rnn(cell=lstm,inputs = start_vec,initial_state=in_state,dtype=tf.float32)
-    output = tf.reshape(output,[1,state_dim])
-    out_logits = tf.matmul(output,W)+ b
-    
-    seq = [6] #the initial sequence we feed the LSTM
-    if len(seq) > 1:
-        x_init = np.reshape([make_feature_vec(i) for i in seq[:-1]],[1,len(seq)-1,note_input_dim])
-        new_state_gen = session.run(state,feed_dict = {x:x_init})
-    start = np.reshape(make_feature_vec(seq[-1]),[1,1,note_input_dim])
-    for i in range(20):
-        new_out_logits, new_state_gen = session.run([out_logits,new_state], feed_dict={start_vec:start,in_state:new_state_gen})
-        index = int(tf.argmax(new_out_logits, 1).eval())
-        seq.append(index)
-        start = np.reshape(make_feature_vec(index),[1,1,note_input_dim])
-
-    current = seq
-    print('Final: {}'.format(current))
-    current_converted = [num_to_vec[current[i]] for i in range(len(current))]
-    print('Final converted: {}'.format(current_converted))
-    '''
     
 if __name__ == "__main__":
     tf.app.run()
