@@ -6,6 +6,8 @@ import numpy as np
 import tensorflow as tf
 
 class RnnModel:
+    
+    ####### one hidden layer
     '''
     def __init__(self, placeholder, min_step=10, state_dim=156):
         self.min_step = min_step
@@ -23,7 +25,6 @@ class RnnModel:
         self.build()
         self.loss()
         self.inference()
-        ###### variable for test case if not training #####
         
         self.optimizer = tf.train.AdamOptimizer(learning_rate=0.005)
         self.grads_and_vars = self.optimizer.compute_gradients(self.loss)
@@ -34,7 +35,9 @@ class RnnModel:
             print(var.name)
         self.train_op = self.optimizer.apply_gradients(clipped_grads_and_vars)
     '''
-    def __init__(self, placeholder, min_step=10, state_dim=156,layer_num=3,keep_prob = 1.0):
+    
+    ###### two hidden layers
+    def __init__(self, placeholder, min_step=10, state_dim=156,layer_num=2,keep_prob = 1.0):
         
         self.min_step = min_step
         self.state_dim = state_dim
