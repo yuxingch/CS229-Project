@@ -1,3 +1,17 @@
+'''
+--- reform_matrix.py
+main():
+    Goal: we want to convert midi file into a numpy array that can be fed into our RNN model
+    Note: 1. we use `midiToNoteStateMatrix` imported from `midi_to_statematrix.py`
+            `midi_to_statematrix.py` is obtained from:
+                https://github.com/hexahedria/biaxial-rnn-music-composition
+          2. `midi_to_statematrix.py` will generate a list for dimension (time_step, 78, 2) for
+            each midi file. We need to flatten this list into numpy array and concatenate it with 
+            other numpy arrays we've obtained
+          3. the new numpy array is of shape (num_of_files, time_steps, 156)
+          4. it will be stored as "dev.npy" or "train.dev" or any other name we want
+'''
+
 import numpy as np
 from midi_to_statematrix import midiToNoteStateMatrix
 
