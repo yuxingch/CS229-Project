@@ -2,7 +2,8 @@ import numpy as np
 from midi_to_statematrix import midiToNoteStateMatrix
 
 import os
-
+##### lowbound pitch :24
+##### upperbound pitch: 102
 PITCH_RANGE = 78
 path = './dev/'
 
@@ -15,7 +16,6 @@ def append_zeros(d, max_len, num_file):
         result[ctr,0:old_array.shape[0],:] = old_array
         ctr += 1
     return result        
-
 
 def main():
     entire_dict = {}
