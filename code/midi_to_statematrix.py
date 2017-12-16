@@ -9,16 +9,12 @@ upperBound = 102
 # (1,0) keep playing
 # (0,0) loose the key
 def midiToNoteStateMatrix(midifile):
-
     pattern = midi.read_midifile(midifile)
     timeleft = [track[0].tick for track in pattern]
-
     posns = [0 for track in pattern]
-
     statematrix = []
     span = upperBound-lowerBound
     time = 0
-
     state = [[0,0] for x in range(span)]
     statematrix.append(state)
     while True:
@@ -34,7 +30,9 @@ def midiToNoteStateMatrix(midifile):
                 pos = posns[i]
 
                 evt = track[pos]
+                
                 if isinstance(evt, midi.NoteEvent):
+                    
                     if (evt.pitch < lowerBound) or (evt.pitch >= upperBound):
                         pass
                         # print "Note {} at time {} out of bounds (ignoring)".format(evt.pitch, time)
