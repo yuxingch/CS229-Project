@@ -28,8 +28,6 @@ def matrix_to_input(channelMatrix):
     #print(time_size)
     curr_vector = np.zeros((5,),dtype=np.int32)
     #print(curr_vector)
-   
-    # TODO: fix batch size
     batch_size=channelMatrix.shape[0]
     music_input= np.zeros((batch_size,time_size,note_size),dtype=np.float)
     
@@ -43,10 +41,6 @@ def matrix_to_input(channelMatrix):
                 if(curr_vector[j]==0):
                     continue
                 music_input[m][i][curr_vector[j]-note_start-1] = 1.0
-    
-    #print(curr_vector)
-    #print(music_input[m][i])
-           
     return music_input 
     
     
@@ -56,20 +50,6 @@ def main(argv=None):
     channelMatrix = originalMatrix[:,:,:]
     music_input = channelMatrix
     
-    # tranpose the matrix, now its dimension is timestep*note_size
-    #channelMatrix  = np.transpose(channelMatrix )
-    #print(channelMatrix.shape)
-    
-    #expand dimension, now batch_size*time*note_size
-    #channelMatrix = np.expand_dims(channelMatrix , axis=0)
-    #print(channelMatrix.shape)
-    
-    #expand note_size from 5*1 to 128*1
-    #music_input = matrix_to_input(channelMatrix)
-    #print(music_input.shape)
-    #print((music_input.shape)[0])
-    #print((music_input.shape)[1])
-    #print((music_input.shape)[2])
     
     seq_len = 50
     placeholder = tensorflow_music_input(music_input, seq_len)
@@ -81,22 +61,13 @@ def main(argv=None):
     sess.run(tf.global_variables_initializer())
     print( tf.trainable_variables())
     merged = tf.summary.merge_all()
+    
     #summary_writer
     max_value = originalMatrix.shape[1] - originalMatrix.shape[1] % 5000 - 1
-    '''
-    for i in range(18):
-        left = 5000*i
-        right = 5000*(i+1)
-        channelMatrix = originalMatrix[:,left:right,:]
-        music_input = matrix_to_input(channelMatrix)
-        _,_, loss,accuracy = sess.run([merged,model.train_op, model.loss, model.accuracy], feed_dict={placeholder['music_input']: music_input})
     
-        print(loss)
-        print(accuracy)
-        
-        
-    '''
     saver = tf.train.Saver(tf.global_variables())
+    
+    #################################### train ########################################
     '''
 
     num_epoch =4
@@ -123,38 +94,25 @@ def main(argv=None):
     print("Done Training")
     
     '''
-    
+    ##################################### generate #########################################
     # music generation
+    # test initialization
     seq_len = 1
-    ## initialization :
     state_dim= 156   
     batch_size = 1
     time_range = 1
     note_input_dim = 156
-    # n is the length of result music
-    n = 1
-   
     
-    # initialize,given note
-
-
+    # n is the length of result music for each iteration
+    n = 1
+    
+    # restore the trained model
     saver = tf.train.import_meta_graph('3_model.meta')
     saver.restore(sess, tf.train.latest_checkpoint('./'))
     
-    '''
-    try:
-        saver.restore(sess, checkpoint.model_checkpoint_path)
-        print('Model restored !')
-    except Exception as e:
-        print(e)
-        return
-    '''   
-    # Get the sample text
-    
-    
+    # initialize, given note
     seq = np.zeros((n,note_input_dim))
     seq[0][72] = 1.0
-    
     seq_len = 1
     start = np.expand_dims(seq[0], axis=0)
     start = np.expand_dims(start, axis=0)
@@ -171,19 +129,6 @@ def main(argv=None):
             result[i,:] = np.squeeze(arr, axis = 0)
             i += 1
     np.save('predict', result)
-
-    '''
-    rescale_output = np.zeros((1,5,1000))
-    for j in range(5):
-        for i in range(1000):
-            if(j==0):
-                rescale_output[0][j][i] = int(np.argmax(output[i][-1], 1))
-            else:
-                rescale_output[0][j][i] = 0.0
-        
-    np.save('output_music.npy',rescale_output)
-    '''
-    print('rescaling done!')
     
 if __name__ == "__main__":
     tf.app.run()
